@@ -1,66 +1,88 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import React from "react";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import CuisineCarousel from "@/components/CuisineCarousel";
+import Footer from "@/components/Footer";
+import { Star, Clock, ArrowRight } from "lucide-react";
 
-export default function Home() {
+export const revalidate = 60; // Revalidate home page every 60 seconds
+
+export default async function Home() {
+  const topRestaurants = await prisma.restaurant.findMany({
+    take: 4,
+    orderBy: {
+      rating: "desc",
+    },
+  });
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <Navbar />
+      <main>
+        <HeroSection />
+        <CuisineCarousel />
+
+        <section className="restaurant-section">
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <p style={{ color: "var(--primary)", fontWeight: "600", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Curated Culinary Excellence
+                </p>
+                <h3>Popular Restaurants Near You</h3>
+              </div>
+              <Link href="/restaurants" className="btn btn-outline btn-md" style={{ borderRadius: "var(--radius-full)" }}>
+                <span>See All Restaurants</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <div className="restaurant-grid">
+              {topRestaurants.map((restaurant) => (
+                <Link
+                  key={restaurant.id}
+                  href={`/restaurants/${restaurant.slug}`}
+                  className="restaurant-card"
+                >
+                  <div className="restaurant-card-media">
+                    {restaurant.isPremium && (
+                      <span className="restaurant-badge-premium">Premium</span>
+                    )}
+                    <img
+                      src={restaurant.coverImage}
+                      alt={restaurant.name}
+                      className="restaurant-card-img"
+                    />
+                  </div>
+                  
+                  <div className="restaurant-card-info">
+                    <div className="restaurant-card-header">
+                      <h4 className="restaurant-card-title">{restaurant.name}</h4>
+                      <div className="restaurant-card-rating">
+                        <Star size={14} style={{ fill: "currentColor" }} />
+                        <span>{restaurant.rating.toFixed(1)}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="restaurant-card-cuisine">{restaurant.cuisine}</p>
+                    
+                    <div className="restaurant-card-meta">
+                      <div className="restaurant-meta-item">
+                        <Clock size={14} />
+                        <span>{restaurant.deliveryTime} mins</span>
+                      </div>
+                      <span style={{ color: "var(--primary)", fontWeight: "600" }}>View Menu &rarr;</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
-    </div>
+      <Footer />
+    </>
   );
 }
